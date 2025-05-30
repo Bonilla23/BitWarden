@@ -1,43 +1,46 @@
-import random
-import string
+import tkinter as tk
+from tkinter import ttk, messagebox
 import json
 import os
 import hashlib
-import getpass
+import string
+import secrets
 
-# Cargar los datos del archivo
+# Cargar datos desde archivo
 def cargar_datos(archivo):
     if os.path.exists(archivo):
         with open(archivo, "r", encoding="utf-8") as file:
             return json.load(file)
     return {}
 
-# Guardar los datos del archivo
+# Guardar datos en archivo
 def guardar_datos(archivo, datos):
     with open(archivo, "w", encoding="utf-8") as file:
         json.dump(datos, file, indent=4)
 
-# Establecer la contraseña principal con seguridad incluida y guardarla
+# Establecer contraseña principal
 def establecer_contrasena_principal(datos):
-    nueva_contrasena = getpass.getpass("No hay contraseña principal establecida. Crea una: ")
+    nueva_contrasena = master_password_entry.get()
+    if not nueva_contrasena:
+        messagebox.showerror("Error", "La contraseña no puede estar vacía.")
+        return
     hash_contrasena = hashlib.sha256(nueva_contrasena.encode()).hexdigest()
     datos["contrasenha_principal"] = hash_contrasena
-    print("Contraseña principal guardada.")
-    return datos
+    guardar_datos(archivo, datos)
+    messagebox.showinfo("Éxito", "Contraseña principal guardada.")
+    master_password_entry.delete(0, tk.END)
+    show_main_frame()
 
-# Verificar la contraseña
+# Verificar contraseña principal
 def verificar_contrasena_principal(datos):
-    contrasena_ingresada = getpass.getpass("Introduce la contraseña principal: ")
+    contrasena_ingresada = master_password_entry.get()
     hash_ingresado = hashlib.sha256(contrasena_ingresada.encode()).hexdigest()
-    return hash_ingresado == datos.get("contrasenha_principal")
+    if hash_ingresado == datos.get("contrasenha_principal"):
+        show_main_frame()
+    else:
+        messagebox.showerror("Error", "Contraseña incorrecta.")
 
-# Mostrar contraseña y la web
-def mostrar_contrasenas(datos):
-    for k, v in datos.items():
-        if k != "contrasenha_principal":
-            print(f"{k}: {v}")
-
-# Generamos la contraseña con lo que nos pide
+# Generar contraseña segura
 def generar_contrasena(length, use_upper, use_lower, use_digits, use_symbols):
     characters = ""
     if use_upper:
@@ -50,51 +53,89 @@ def generar_contrasena(length, use_upper, use_lower, use_digits, use_symbols):
         characters += string.punctuation
 
     if not characters:
-        print("Debes seleccionar al menos un tipo de carácter.")
+        messagebox.showerror("Error", "Debes seleccionar al menos un tipo de carácter.")
         return None
 
-    return ''.join(random.choice(characters) for _ in range(length))
+    return ''.join(secrets.choice(characters) for _ in range(length))
 
-# Comprobar contraseña y ejecutar el resto de comandos si es correcta
-def contrasenha_principal():
-    archivo = "cifrado.json"
-    datos = cargar_datos(archivo)
+# Mostrar contraseñas guardadas
+def mostrar_contrasenas(datos):
+    passwords = ""
+    for k, v in datos.items():
+        if k != "contrasenha_principal":
+            passwords += f"{k}: {v}\n"
+    messagebox.showinfo("Contraseñas Guardadas", passwords or "No hay contraseñas guardadas.")
 
-    if "contrasenha_principal" in datos:
-        if not verificar_contrasena_principal(datos):
-            print("Contraseña incorrecta...")
-            return
-    else:
-        datos = establecer_contrasena_principal(datos)
-        guardar_datos(archivo, datos)
-        return
-
-    verdatos = input("¿Desea ver las contraseñas? (s/n): ").lower()
-    if verdatos == "s":
-        mostrar_contrasenas(datos)
-
-    web = input("Introduce la web: ")
+# Generar y guardar contraseña
+def handle_password_generation():
+    web = web_entry.get()
     try:
-        length = int(input("¿Longitud de la contraseña? "))
+        length = int(length_entry.get())
         if length < 4:
-            print("La longitud debe ser al menos 4.")
+            messagebox.showerror("Error", "La longitud debe ser al menos 4.")
             return
     except ValueError:
-        print("Por favor, introduce un número válido.")
+        messagebox.showerror("Error", "Por favor, introduce un número válido.")
         return
 
-    use_may = input("¿Incluir mayúsculas? (s/n): ").lower() == 's'
-    use_min = input("¿Incluir minúsculas? (s/n): ").lower() == 's'
-    use_digi = input("¿Incluir números? (s/n): ").lower() == 's'
-    use_simb = input("¿Incluir símbolos? (s/n): ").lower() == 's'
+    use_may = use_upper_var.get()
+    use_min = use_lower_var.get()
+    use_digi = use_digits_var.get()
+    use_simb = use_symbols_var.get()
 
-    # Generamos la contraseña de la web con los datos que nos pidio
     password = generar_contrasena(length, use_may, use_min, use_digi, use_simb)
     if password:
-        print("Tu contraseña segura es:", password)
+        messagebox.showinfo("Contraseña Generada", f"Tu contraseña segura es: {password}")
         datos[web] = password
         guardar_datos(archivo, datos)
 
-# Para que se ejecute de primero
-if __name__ == "__main__":
-    contrasenha_principal()
+# Mostrar interfaz principal
+def show_main_frame():
+    master_password_frame.grid_forget()
+    main_frame.grid()
+
+# Configuración inicial
+root = tk.Tk()
+root.title("Bitlocker")
+
+archivo = "cifrado.json"
+datos = cargar_datos(archivo)
+
+# Frame para contraseña principal
+master_password_frame = ttk.Frame(root, padding=10)
+master_password_frame.grid()
+
+ttk.Label(master_password_frame, text="Introduce la contraseña principal:").grid(column=0, row=0, columnspan=2)
+master_password_entry = ttk.Entry(master_password_frame, show="*")
+master_password_entry.grid(column=0, row=1, columnspan=2)
+
+if "contrasenha_principal" in datos:
+    ttk.Button(master_password_frame, text="Verificar", command=lambda: verificar_contrasena_principal(datos)).grid(column=0, row=2)
+else:
+    ttk.Button(master_password_frame, text="Establecer", command=lambda: establecer_contrasena_principal(datos)).grid(column=0, row=2)
+
+# Frame principal
+main_frame = ttk.Frame(root, padding=10)
+
+ttk.Label(main_frame, text="Introduce la web:").grid(column=0, row=0)
+web_entry = ttk.Entry(main_frame)
+web_entry.grid(column=1, row=0)
+
+ttk.Label(main_frame, text="Longitud de la contraseña:").grid(column=0, row=1)
+length_entry = ttk.Entry(main_frame)
+length_entry.grid(column=1, row=1)
+
+use_upper_var = tk.BooleanVar()
+use_lower_var = tk.BooleanVar()
+use_digits_var = tk.BooleanVar()
+use_symbols_var = tk.BooleanVar()
+
+ttk.Checkbutton(main_frame, text="Incluir mayúsculas", variable=use_upper_var).grid(column=0, row=2, columnspan=2)
+ttk.Checkbutton(main_frame, text="Incluir minúsculas", variable=use_lower_var).grid(column=0, row=3, columnspan=2)
+ttk.Checkbutton(main_frame, text="Incluir números", variable=use_digits_var).grid(column=0, row=4, columnspan=2)
+ttk.Checkbutton(main_frame, text="Incluir símbolos", variable=use_symbols_var).grid(column=0, row=5, columnspan=2)
+
+ttk.Button(main_frame, text="Generar Contraseña", command=handle_password_generation).grid(column=0, row=6, columnspan=2)
+ttk.Button(main_frame, text="Ver Contraseñas Guardadas", command=lambda: mostrar_contrasenas(datos)).grid(column=0, row=7, columnspan=2)
+
+root.mainloop()
