@@ -9,8 +9,12 @@ import secrets
 # Cargar datos desde archivo
 def cargar_datos(archivo):
     if os.path.exists(archivo):
-        with open(archivo, "r", encoding="utf-8") as file:
-            return json.load(file)
+        try:
+            with open(archivo, "r", encoding="utf-8") as file:
+                return json.load(file)
+        except json.JSONDecodeError:
+            messagebox.showerror("Error", "El archivo de datos está corrupto o vacío.")
+            return {}
     return {}
 
 # Guardar datos en archivo
@@ -68,7 +72,11 @@ def mostrar_contrasenas(datos):
 
 # Generar y guardar contraseña
 def handle_password_generation():
-    web = web_entry.get()
+    web = web_entry.get().strip()
+    if not web:
+        messagebox.showerror("Error", "Debes introducir un nombre para la web.")
+        return
+
     try:
         length = int(length_entry.get())
         if length < 4:
@@ -85,7 +93,11 @@ def handle_password_generation():
 
     password = generar_contrasena(length, use_may, use_min, use_digi, use_simb)
     if password:
+        if web in datos and not messagebox.askyesno("Sobrescribir", f"Ya existe una contraseña para {web}. ¿Deseas sobrescribirla?"):
+            return
         messagebox.showinfo("Contraseña Generada", f"Tu contraseña segura es: {password}")
+        root.clipboard_clear()
+        root.clipboard_append(password)
         datos[web] = password
         guardar_datos(archivo, datos)
 
@@ -96,7 +108,7 @@ def show_main_frame():
 
 # Configuración inicial
 root = tk.Tk()
-root.title("Bitlocker")
+root.title("Gestor de Contraseñas")  # cambiado para no confundir con BitLocker
 
 archivo = "cifrado.json"
 datos = cargar_datos(archivo)
@@ -105,37 +117,37 @@ datos = cargar_datos(archivo)
 master_password_frame = ttk.Frame(root, padding=10)
 master_password_frame.grid()
 
-ttk.Label(master_password_frame, text="Introduce la contraseña principal:").grid(column=0, row=0, columnspan=2)
+ttk.Label(master_password_frame, text="Introduce la contraseña principal:").grid(column=0, row=0, columnspan=2, sticky="w")
 master_password_entry = ttk.Entry(master_password_frame, show="*")
-master_password_entry.grid(column=0, row=1, columnspan=2)
+master_password_entry.grid(column=0, row=1, columnspan=2, pady=5)
 
 if "contrasenha_principal" in datos:
-    ttk.Button(master_password_frame, text="Verificar", command=lambda: verificar_contrasena_principal(datos)).grid(column=0, row=2)
+    ttk.Button(master_password_frame, text="Verificar", command=lambda: verificar_contrasena_principal(datos)).grid(column=0, row=2, pady=5)
 else:
-    ttk.Button(master_password_frame, text="Establecer", command=lambda: establecer_contrasena_principal(datos)).grid(column=0, row=2)
+    ttk.Button(master_password_frame, text="Establecer", command=lambda: establecer_contrasena_principal(datos)).grid(column=0, row=2, pady=5)
 
 # Frame principal
 main_frame = ttk.Frame(root, padding=10)
 
-ttk.Label(main_frame, text="Introduce la web:").grid(column=0, row=0)
+ttk.Label(main_frame, text="Introduce la web:").grid(column=0, row=0, sticky="w")
 web_entry = ttk.Entry(main_frame)
-web_entry.grid(column=1, row=0)
+web_entry.grid(column=1, row=0, padx=5, pady=5)
 
-ttk.Label(main_frame, text="Longitud de la contraseña:").grid(column=0, row=1)
+ttk.Label(main_frame, text="Longitud de la contraseña:").grid(column=0, row=1, sticky="w")
 length_entry = ttk.Entry(main_frame)
-length_entry.grid(column=1, row=1)
+length_entry.grid(column=1, row=1, padx=5, pady=5)
 
 use_upper_var = tk.BooleanVar()
 use_lower_var = tk.BooleanVar()
 use_digits_var = tk.BooleanVar()
 use_symbols_var = tk.BooleanVar()
 
-ttk.Checkbutton(main_frame, text="Incluir mayúsculas", variable=use_upper_var).grid(column=0, row=2, columnspan=2)
-ttk.Checkbutton(main_frame, text="Incluir minúsculas", variable=use_lower_var).grid(column=0, row=3, columnspan=2)
-ttk.Checkbutton(main_frame, text="Incluir números", variable=use_digits_var).grid(column=0, row=4, columnspan=2)
-ttk.Checkbutton(main_frame, text="Incluir símbolos", variable=use_symbols_var).grid(column=0, row=5, columnspan=2)
+ttk.Checkbutton(main_frame, text="Incluir mayúsculas", variable=use_upper_var).grid(column=0, row=2, columnspan=2, sticky="w")
+ttk.Checkbutton(main_frame, text="Incluir minúsculas", variable=use_lower_var).grid(column=0, row=3, columnspan=2, sticky="w")
+ttk.Checkbutton(main_frame, text="Incluir números", variable=use_digits_var).grid(column=0, row=4, columnspan=2, sticky="w")
+ttk.Checkbutton(main_frame, text="Incluir símbolos", variable=use_symbols_var).grid(column=0, row=5, columnspan=2, sticky="w")
 
-ttk.Button(main_frame, text="Generar Contraseña", command=handle_password_generation).grid(column=0, row=6, columnspan=2)
-ttk.Button(main_frame, text="Ver Contraseñas Guardadas", command=lambda: mostrar_contrasenas(datos)).grid(column=0, row=7, columnspan=2)
+ttk.Button(main_frame, text="Generar Contraseña", command=handle_password_generation).grid(column=0, row=6, columnspan=2, pady=5)
+ttk.Button(main_frame, text="Ver Contraseñas Guardadas", command=lambda: mostrar_contrasenas(datos)).grid(column=0, row=7, columnspan=2, pady=5)
 
 root.mainloop()
