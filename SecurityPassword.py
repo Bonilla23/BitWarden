@@ -7,7 +7,7 @@ import string
 import secrets
 
 # Función para centrar ventana
-def centrar_ventana(ventana, ancho=400, alto=300):
+def centrar_ventana(ventana, ancho=600, alto=400):
     ventana.update_idletasks()
     screen_width = ventana.winfo_screenwidth()
     screen_height = ventana.winfo_screenheight()
@@ -115,9 +115,8 @@ def show_main_frame():
     master_password_frame.grid_forget()
     main_frame.grid()
 
-# -----------------------------
+
 # Configuración inicial
-# -----------------------------
 root = tk.Tk()
 root.title("Gestor de Contraseñas")
 
@@ -131,37 +130,53 @@ datos = cargar_datos(archivo)
 master_password_frame = ttk.Frame(root, padding=10)
 master_password_frame.grid()
 
-ttk.Label(master_password_frame, text="Introduce la contraseña principal:").grid(column=0, row=0, columnspan=2, sticky="w")
+ttk.Label(
+    master_password_frame,
+    text="Introduce la contraseña principal:").grid(column=0, row=0, columnspan=2, pady=5)
+
 master_password_entry = ttk.Entry(master_password_frame, show="*")
 master_password_entry.grid(column=0, row=1, columnspan=2, pady=5)
 
 if "contrasenha_principal" in datos:
-    ttk.Button(master_password_frame, text="Verificar", command=lambda: verificar_contrasena_principal(datos)).grid(column=0, row=2, pady=5)
+    ttk.Button(master_password_frame, text="Verificar", command=lambda: verificar_contrasena_principal(datos)).grid(column=0, row=2, columnspan=2, pady=5)
 else:
-    ttk.Button(master_password_frame, text="Establecer", command=lambda: establecer_contrasena_principal(datos)).grid(column=0, row=2, pady=5)
+    ttk.Button(master_password_frame, text="Establecer", command=lambda: establecer_contrasena_principal(datos)).grid(column=0, row=2, columnspan=2, pady=5)
 
 # Frame principal
-main_frame = ttk.Frame(root, padding=10)
+main_frame = ttk.Frame(root, padding=3)
 
-ttk.Label(main_frame, text="Introduce la web:").grid(column=0, row=0, sticky="w")
-web_entry = ttk.Entry(main_frame)
-web_entry.grid(column=1, row=0, padx=5, pady=5)
+# Configuramos fila y columna para que sean responsive
+root.grid_columnconfigure(0, weight=1)
+root.grid_rowconfigure(0, weight=1)
 
-ttk.Label(main_frame, text="Longitud de la contraseña:").grid(column=0, row=1, sticky="w")
-length_entry = ttk.Entry(main_frame)
-length_entry.grid(column=1, row=1, padx=5, pady=5)
+# Para que sea Responsive
+main_frame.grid_columnconfigure(0, weight=1)
+for i in range(10):
+    main_frame.grid_rowconfigure(i, weight=1)
 
+# Web
+ttk.Label(main_frame, text="Introduce la web:", anchor="center").grid(column=0, row=0, pady=5, sticky="ew")
+web_entry = ttk.Entry(main_frame, justify="center")
+web_entry.grid(column=0, row=1, padx=10, pady=5, sticky="ew")
+
+# Longitud de la contraseña
+ttk.Label(main_frame, text="Longitud de la contraseña:", anchor="center").grid(column=0, row=2, pady=5, sticky="ew")
+length_entry = ttk.Entry(main_frame, justify="center")
+length_entry.grid(column=0, row=3, padx=10, pady=5, sticky="ew")
+
+# Checkbuttons
 use_upper_var = tk.BooleanVar()
 use_lower_var = tk.BooleanVar()
 use_digits_var = tk.BooleanVar()
 use_symbols_var = tk.BooleanVar()
 
-ttk.Checkbutton(main_frame, text="Incluir mayúsculas", variable=use_upper_var).grid(column=0, row=2, columnspan=2, sticky="w")
-ttk.Checkbutton(main_frame, text="Incluir minúsculas", variable=use_lower_var).grid(column=0, row=3, columnspan=2, sticky="w")
-ttk.Checkbutton(main_frame, text="Incluir números", variable=use_digits_var).grid(column=0, row=4, columnspan=2, sticky="w")
-ttk.Checkbutton(main_frame, text="Incluir símbolos", variable=use_symbols_var).grid(column=0, row=5, columnspan=2, sticky="w")
+ttk.Checkbutton(main_frame, text="Incluir mayúsculas", variable=use_upper_var).grid(column=0, row=4, pady=2, sticky="w")
+ttk.Checkbutton(main_frame, text="Incluir minúsculas", variable=use_lower_var).grid(column=0, row=5, pady=2, sticky="w")
+ttk.Checkbutton(main_frame, text="Incluir números", variable=use_digits_var).grid(column=0, row=6, pady=2, sticky="w")
+ttk.Checkbutton(main_frame, text="Incluir símbolos", variable=use_symbols_var).grid(column=0, row=7, pady=2, sticky="w")
 
-ttk.Button(main_frame, text="Generar Contraseña", command=handle_password_generation).grid(column=0, row=6, columnspan=2, pady=5)
-ttk.Button(main_frame, text="Ver Contraseñas Guardadas", command=lambda: mostrar_contrasenas(datos)).grid(column=0, row=7, columnspan=2, pady=5)
+# Botones
+ttk.Button(main_frame, text="Generar Contraseña", command=handle_password_generation).grid(column=0, row=8, pady=5, padx=10, sticky="ew")
+ttk.Button(main_frame, text="Ver Contraseñas Guardadas", command=lambda: mostrar_contrasenas(datos)).grid(column=0, row=9, pady=5, padx=10, sticky="ew")
 
 root.mainloop()
