@@ -6,6 +6,15 @@ import hashlib
 import string
 import secrets
 
+# Función para centrar ventana
+def centrar_ventana(ventana, ancho=400, alto=300):
+    ventana.update_idletasks()
+    screen_width = ventana.winfo_screenwidth()
+    screen_height = ventana.winfo_screenheight()
+    x = (screen_width // 2) - (ancho // 2)
+    y = (screen_height // 2) - (alto // 2)
+    ventana.geometry(f"{ancho}x{alto}+{x}+{y}")
+
 # Cargar datos desde archivo
 def cargar_datos(archivo):
     if os.path.exists(archivo):
@@ -106,9 +115,14 @@ def show_main_frame():
     master_password_frame.grid_forget()
     main_frame.grid()
 
+# -----------------------------
 # Configuración inicial
+# -----------------------------
 root = tk.Tk()
-root.title("Gestor de Contraseñas")  # cambiado para no confundir con BitLocker
+root.title("Gestor de Contraseñas")
+
+# Centramos la ventana al inicio
+centrar_ventana(root, 400, 250)
 
 archivo = "cifrado.json"
 datos = cargar_datos(archivo)
